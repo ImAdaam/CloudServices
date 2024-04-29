@@ -6,6 +6,12 @@ const readline = require("readline").createInterface({
 });
 const { VertexAI } = require("@google-cloud/vertexai");
 
+
+const { Translate } = require('@google-cloud/translate').v2;
+require('dotenv').config();
+
+
+
 // // // VERTEX/GEMINI CONFIGURATIN -- CHANGE THIS TO YOUR PROJECT // // //
 const projectLocation = "europe-west4";
 const projectId = "cloud-programming-24";
@@ -144,6 +150,96 @@ async function selectFileFromSystem() {
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+// Inicializáljuk a Google Translate API-t
+const translate = new Translate();
+
+// Függvény a szöveg fordításához
+const translateText = async (text, targetLanguage) => {
+    try {
+        // Fordítás végrehajtása
+        const [translation] = await translate.translate(text, targetLanguage);
+
+        // Fordított szöveg visszaadása
+        return translation;
+    } catch (error) {
+        console.error(`Error during translation: ${error}`);
+        return null;
+    }
+};
+
+
+async function main() {
+    let keepRunning = true;
+
+    console.log("\n/ // /// //// WELCOME TO YOUR GEMINI CHAT BOT //// /// // /\n\n");
+
+    while (keepRunning) {
+        const operationChoice = await askQuestion("What would you like to do? (image/text): ");
+
+        if (operationChoice.toLowerCase() === "image") {
+            // Kép elemzés
+            const inputFilePath = await selectFileFromSystem();
+            if (!inputFilePath) {
+                console.log("No file selected. Exiting...");
+                break;
+            }
+
+            // Ask the user what their question is
+            const userQuestion = await askQuestion("\nWhat's your question? ");
+
+            // Call the Gemini API
+            const geminiResponse = await callGeminiAPI(
+                projectId,
+                projectLocation,
+                model,
+                inputFilePath,
+                userQuestion
+            ).catch((err) => {
+                console.error(err.message);
+                process.exitCode = 1;
+            });
+
+            console.log(`\n${geminiResponse}\n`);
+        } else if (operationChoice.toLowerCase() === "text") {
+            // Szöveg fordítás
+            const textToTranslate = await askQuestion("Enter the text to translate: ");
+            const targetLanguage = await askQuestion("Enter the target language code: ");
+
+            const translatedText = await translateText(textToTranslate, targetLanguage);
+            console.log(`Translated text: ${translatedText}`);
+        } else {
+            console.log("Invalid choice. Please enter 'image' or 'text'.");
+        }
+
+        const continueRunning = await askQuestion("Do you have another question? (yes/no): ");
+        keepRunning = continueRunning.toLowerCase() === "yes";
+    }
+
+    console.log("\nOk, have a great rest of your day!\n");
+    readline.close();
+}
+
+main();
+
+
+
+
+
+
+
+
+
+/*
 async function main() {
     let keepRunning = true;
 
@@ -183,5 +279,5 @@ async function main() {
 
 main();
 
-
+*/
 
